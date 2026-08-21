@@ -150,6 +150,14 @@ class ChamadoFiltroStatusTests(APITestCase):
             status.HTTP_400_BAD_REQUEST,
         )
         self.assertIn("status", response.data)
+    def test_listar_todos_os_chamados_sem_filtro(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(len(response.data), 3)
 
 class IndicadoresTests(APITestCase):
     def setUp(self):
@@ -186,3 +194,17 @@ class IndicadoresTests(APITestCase):
         self.assertEqual(response.data["abertos"], 2)
         self.assertEqual(response.data["em_andamento"], 1)
         self.assertEqual(response.data["concluidos"], 1)
+
+    def test_indicadores_sem_chamados(self):
+        Chamado.objects.all().delete()
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(response.data["total"], 0)
+        self.assertEqual(response.data["abertos"], 0)
+        self.assertEqual(response.data["em_andamento"], 0)
+        self.assertEqual(response.data["concluidos"], 0)
