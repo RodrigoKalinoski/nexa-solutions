@@ -2,6 +2,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from .models import Chamado
+
 
 class ChamadoCreateTests(APITestCase):
     def setUp(self):
@@ -66,3 +68,85 @@ class ChamadoCreateTests(APITestCase):
             status.HTTP_400_BAD_REQUEST,
         )
         self.assertIn("titulo", response.data)
+
+class ChamadoFiltroStatusTests(APITestCase):
+    def setUp(self):
+        self.url = reverse("chamado-list-create")
+
+        Chamado.objects.create(
+            titulo="Chamado aberto",
+            descricao="Teste",
+            status=Chamado.Status.ABERTO,
+        )
+
+        Chamado.objects.create(
+            titulo="Chamado em andamento",
+            descricao="Teste",
+            status=Chamado.Status.EM_ANDAMENTO,
+        )
+
+        Chamado.objects.create(
+            titulo="Chamado concluído",
+            descricao="Teste",
+            status=Chamado.Status.CONCLUIDO,
+        )
+
+    def test_filtrar_chamados_por_status_aberto(self):
+        response = self.client.get(
+            self.url,
+            {"status": "ABERTO"},
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(
+            response.data[0]["status"],
+            "ABERTO",
+        )
+
+    def test_filtrar_chamados_por_status_em_andamento(self):
+        response = self.client.get(
+            self.url,
+            {"status": "EM_ANDAMENTO"},
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(
+            response.data[0]["status"],
+            "EM_ANDAMENTO",
+        )
+
+    def test_filtrar_chamados_por_status_concluido(self):
+        response = self.client.get(
+            self.url,
+            {"status": "CONCLUIDO"},
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(
+            response.data[0]["status"],
+            "CONCLUIDO",
+        )
+
+    def test_status_invalido_retorna_400(self):
+        response = self.client.get(
+            self.url,
+            {"status": "INVALIDO"},
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertIn("status", response.data)
